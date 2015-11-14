@@ -83,8 +83,9 @@ void AlarmClock::remote_decode() {
 }
 
 void AlarmClock::setupScreen() {
-    screen.begin();
-    screen.background(0, 0, 0);
+    screen.initR(INITR_BLACKTAB);
+    screen.fillScreen(ST7735_BLACK);
+    screen.setRotation(1);
     delay(250);
     drawAlarmTime();
 }
@@ -95,11 +96,12 @@ void AlarmClock::drawAlarmTime() {
     String tmp = getAlarmTime();
     tmp.toCharArray(alarmTime, 6);
     SET_ALARM.toCharArray(alarmText, 12);//
-    screen.background(0, 0, 0);//
-    screen.stroke(255, 255, 255);
     screen.setTextSize(2);
-    screen.text(alarmText, 15, 30); //
-    screen.text(alarmTime, 50, 60);
+    screen.setTextColor(ST7735_WHITE, ST7735_BLACK);
+    screen.setCursor(15, 30);
+    screen.print(alarmText);
+    screen.setCursor(50, 60);
+    screen.print(alarmTime);
     screen.setTextSize(1);
 }
 
@@ -170,7 +172,7 @@ void AlarmClock::keyPressedWhenSettingAlarm(int code) {
     if (code == 64 && (first != 'x' && second != 'x' && third != 'x' && fourth != 'x')) { // ok button pressed
         currentIndex = 0;
         state = CLOCK_STATE;
-        screen.background(0, 0, 0);
+        screen.fillScreen(ST7735_BLACK);
     }
 }
 
@@ -192,40 +194,75 @@ void AlarmClock::keyPressed(int code) {
     if (state == SET_ALARM_STATE) {
         keyPressedWhenSettingAlarm(code);
     } else if (state == CLOCK_STATE) {
-
+        if (code == 66) {
+            state = SET_ALARM_STATE;
+            resetAlarm();
+            currentIndex = 0;
+            screen.fillScreen(ST7735_BLACK);
+            drawAlarmTime();
+        }
     } else if (state == BEEP_STATE) {
-
+        if (code == 64) {
+            state = SET_ALARM_STATE;
+            resetAlarm();
+            currentIndex = 0;
+            screen.fillScreen(ST7735_BLACK);
+            drawAlarmTime();
+        }
     }
     lastCode = 0;
 }
 
+void AlarmClock::resetAlarm() {
+    first = 'x';
+    second = 'x';
+    third = 'x';
+    fourth = 'x';
+}
+
 String AlarmClock::getTime(DateTime dt) {
-    String now = String(dt.hour());
-    now += ":";
-    now += dt.minute();
-    now += ":";
-    now += dt.second();
+    char time[10];
+    sprintf(time, "%02d:%02d:%02d", dt.hour(), dt.minute(), dt.second());
+    String now = String(time);
     return now;
 }
 
-void AlarmClock::drawClock(String currentTime) {
-    char old[9];
-    char tmp[9];
-    currentTime.toCharArray(tmp, 9);
-    lastTime.toCharArray(tmp, 9);
-//    screen.background(0, 0, 0);
-    screen.setTextSize(2);
-    screen.stroke(0, 0, 0);
-    screen.text(old, 15, 30);
-    delay(50);
-    screen.stroke(255, 255, 255);
-    screen.text(tmp, 15, 30);
-    screen.setTextSize(1);
+String AlarmClock::getHourMinute(DateTime dt) {
+    char time[6];
+    sprintf(time, "%02d:%02d", dt.hour(), dt.minute());
+    return String(time);
+}
 
-    Serial.print(lastTime);
-    Serial.print(" vs ");
-    Serial.println(currentTime);
-//    delay(250);
+void AlarmClock::drawClock(String currentTime) {
+    char current[9];
+    currentTime.toCharArray(current, 9);
+    screen.setTextSize(2);
+    screen.setTextColor(ST7735_WHITE, ST7735_BLACK);
+    screen.setCursor(30, 30);
+    screen.print(current);
+    screen.setTextSize(1);
+    drawAlarm();
+}
+
+void AlarmClock::drawAlarm() {
+    char tmp[6];
+    getAlarmTime().toCharArray(tmp, 6);
+    screen.setTextSize(3);
+    screen.setTextColor(ST7735_RED, ST7735_BLACK);
+    screen.setCursor(35, 55);
+    screen.print(tmp);
+    screen.setTextSize(1);
+}
+
+void AlarmClock::drawBeep() {
+    char tmp[6];
+    screen.fillScreen(ST7735_BLACK);
+    getAlarmTime().toCharArray(tmp, 6);
+    screen.setTextSize(4);
+    screen.setTextColor(ST7735_RED);
+    screen.setCursor(35, 55);
+    screen.print(tmp);
+    screen.setTextSize(1);
 }
 
 void AlarmClock::update() {
@@ -245,5 +282,15 @@ void AlarmClock::update() {
             drawClock(currentTime);
             lastTime = currentTime;
         }
+        if (getHourMinute(now) == getAlarmTime()) {
+            state = BEEP_STATE;
+            drawBeep();
+        }
+    }
+
+    if (state == BEEP_STATE) {
+        tone(SPEAKER, 2000);
+        delay(100);
+        noTone(SPEAKER);
     }
 }

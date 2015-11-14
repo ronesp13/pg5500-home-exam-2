@@ -3,7 +3,10 @@
 
 #include "Arduino.h"
 #include "RTClib.h"
-#include <TFT.h>
+//#include <TFT.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include "Adafruit_ST7735.h"
 
 #define CS 10
 #define DC 9
@@ -20,7 +23,7 @@
 class AlarmClock {
 
 private:
-    // State 0
+
     const String SET_ALARM = "STILL ALARM";
     byte state = SET_ALARM_STATE;
     char first = 'x';
@@ -29,18 +32,13 @@ private:
     char fourth = 'x';
     byte currentIndex = 0;
 
-    // State 1
-
-
-    // State 2
-
     int Pulse_Width = 0;
     int ir_code = 0x00;
     char adrL_code = 0x00;
     char adrH_code = 0x00;
     char lastCode;
     DateTime now;
-    TFT screen = TFT(CS, DC, RST);
+    Adafruit_ST7735 screen = Adafruit_ST7735(CS, DC, RST);
     RTC_DS1307 clock;
     String lastTime;
 
@@ -56,10 +54,13 @@ private:
     void keyPressedWhenSettingAlarm(int code);
     char codeToChar(int code);
     String getTime(DateTime dt);
+    String getHourMinute(DateTime dt);
+    void resetAlarm();
 
-    // view functions
     void drawAlarmTime();
     void drawClock(String currentTime);
+    void drawAlarm();
+    void drawBeep();
 
 public:
     void setup();
