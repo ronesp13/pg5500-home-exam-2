@@ -42,6 +42,7 @@ private:
     DateTime now;
     TFT screen = TFT(CS, DC, RST);
     RTC_DS1307 clock;
+    String lastTime;
 
     void timer1_init();
     char logic_value();
@@ -54,9 +55,11 @@ private:
     void keyPressed(int code);
     void keyPressedWhenSettingAlarm(int code);
     char codeToChar(int code);
+    String getTime(DateTime dt);
 
     // view functions
     void drawAlarmTime();
+    void drawClock(String currentTime);
 
 public:
     void setup();

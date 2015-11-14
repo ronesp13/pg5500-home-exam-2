@@ -169,6 +169,8 @@ void AlarmClock::keyPressedWhenSettingAlarm(int code) {
 
     if (code == 64 && (first != 'x' && second != 'x' && third != 'x' && fourth != 'x')) { // ok button pressed
         currentIndex = 0;
+        state = CLOCK_STATE;
+        screen.background(0, 0, 0);
     }
 }
 
@@ -194,6 +196,36 @@ void AlarmClock::keyPressed(int code) {
     } else if (state == BEEP_STATE) {
 
     }
+    lastCode = 0;
+}
+
+String AlarmClock::getTime(DateTime dt) {
+    String now = String(dt.hour());
+    now += ":";
+    now += dt.minute();
+    now += ":";
+    now += dt.second();
+    return now;
+}
+
+void AlarmClock::drawClock(String currentTime) {
+    char old[9];
+    char tmp[9];
+    currentTime.toCharArray(tmp, 9);
+    lastTime.toCharArray(tmp, 9);
+//    screen.background(0, 0, 0);
+    screen.setTextSize(2);
+    screen.stroke(0, 0, 0);
+    screen.text(old, 15, 30);
+    delay(50);
+    screen.stroke(255, 255, 255);
+    screen.text(tmp, 15, 30);
+    screen.setTextSize(1);
+
+    Serial.print(lastTime);
+    Serial.print(" vs ");
+    Serial.println(currentTime);
+//    delay(250);
 }
 
 void AlarmClock::update() {
@@ -205,5 +237,13 @@ void AlarmClock::update() {
         int code = (int) lastCode;
         Serial.println(code);
         keyPressed(code);
+    }
+
+    if (state == CLOCK_STATE) {
+        String currentTime = getTime(now);
+        if (lastTime == NULL || lastTime != currentTime) {
+            drawClock(currentTime);
+            lastTime = currentTime;
+        }
     }
 }
